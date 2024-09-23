@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import insper.pi_zambom.dto.CpfMembroDTO;
 import insper.pi_zambom.dto.ProjetoDTO;
 import insper.pi_zambom.model.Projeto;
 import insper.pi_zambom.model.StatusProjeto;
@@ -36,8 +37,8 @@ public class ProjetoController {
     }
 
     @PostMapping("/{projetoId}/membros")
-    public ResponseEntity<Projeto> adicionarMembroProjeto(@PathVariable String projetoId, @RequestBody String cpfMembro) {
-        Projeto projeto = projetoService.adicionarMembroProjeto(projetoId, cpfMembro);
+    public ResponseEntity<Projeto> adicionarMembroProjeto(@PathVariable String projetoId, @RequestBody CpfMembroDTO cpfMembroDTO) {
+        Projeto projeto = projetoService.adicionarMembroProjeto(projetoId, cpfMembroDTO.getCpfMembro());
         return ResponseEntity.ok(projeto);
     }
 }
