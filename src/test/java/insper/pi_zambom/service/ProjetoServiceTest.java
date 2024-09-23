@@ -1,9 +1,9 @@
 package insper.pi_zambom.service;
 
-import insper.pi_zambom.dto.ProjetoDTO;
-import insper.pi_zambom.model.Projeto;
-import insper.pi_zambom.model.StatusProjeto;
-import insper.pi_zambom.repository.ProjetoRepository;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,13 +11,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import insper.pi_zambom.dto.ProjetoDTO;
+import insper.pi_zambom.model.Projeto;
+import insper.pi_zambom.model.StatusProjeto;
+import insper.pi_zambom.repository.ProjetoRepository;
 
 class ProjetoServiceTest {
+
     @Mock
     private ProjetoRepository projetoRepository;
 
@@ -46,7 +50,9 @@ class ProjetoServiceTest {
         projeto.setStatus(projetoDTO.getStatus());
         projeto.setCpfGerente(projetoDTO.getCpfGerente());
 
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenReturn("Usuário encontrado");
+        // Simulando uma resposta HTTP 200 para um usuário válido
+        ResponseEntity<String> responseEntity = new ResponseEntity<>("Usuário encontrado", HttpStatus.OK);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
         Mockito.when(projetoRepository.save(Mockito.any(Projeto.class))).thenReturn(projeto);
 
         Projeto savedProjeto = projetoService.cadastrarProjeto(projetoDTO);
@@ -63,7 +69,9 @@ class ProjetoServiceTest {
         ProjetoDTO projetoDTO = new ProjetoDTO();
         projetoDTO.setCpfGerente("456");
 
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenThrow(new RuntimeException("Usuário não encontrado"));
+        // Simulando uma resposta HTTP 404 para um usuário inválido
+        ResponseEntity<String> responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
 
         Assertions.assertThrows(RuntimeException.class, () -> projetoService.cadastrarProjeto(projetoDTO));
     }
@@ -110,7 +118,8 @@ class ProjetoServiceTest {
         projeto.setStatus(StatusProjeto.PLANEJAMENTO);
 
         Mockito.when(projetoRepository.findById(projetoId)).thenReturn(Optional.of(projeto));
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenReturn("Usuário encontrado");
+        ResponseEntity<String> responseEntity = new ResponseEntity<>("Usuário encontrado", HttpStatus.OK);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
         Mockito.when(projetoRepository.save(Mockito.any(Projeto.class))).thenReturn(projeto);
 
         Projeto savedProjeto = projetoService.adicionarMembroProjeto(projetoId, cpfMembro);
@@ -141,7 +150,8 @@ class ProjetoServiceTest {
         projeto.setStatus(StatusProjeto.PLANEJAMENTO);
 
         Mockito.when(projetoRepository.findById(projetoId)).thenReturn(Optional.of(projeto));
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenThrow(new RuntimeException("Usuário não encontrado"));
+        ResponseEntity<String> responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
 
         Assertions.assertThrows(RuntimeException.class, () -> projetoService.adicionarMembroProjeto(projetoId, cpfMembro));
     }
@@ -149,20 +159,39 @@ class ProjetoServiceTest {
     @Test
     void testVerificarUsuario_usuarioEncontrado() {
         String cpf = "123";
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenReturn("Usuário encontrado");
+
+        // Simulando uma resposta HTTP 200 (OK)
+        ResponseEntity<String> responseEntity = new ResponseEntity<>("Usuário encontrado", HttpStatus.OK);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
 
         boolean usuarioEncontrado = projetoService.verificarUsuario(cpf);
 
-        Assertions.assertTrue(usuarioEncontrado);
+        Assertions.assertTrue(usuarioEncontrado, "O usuário deveria ser encontrado.");
     }
 
     @Test
     void testVerificarUsuario_usuarioNaoEncontrado() {
         String cpf = "456";
-        Mockito.when(restTemplate.getForObject(Mockito.anyString(), Mockito.any())).thenThrow(new RuntimeException("Usuário não encontrado"));
+
+        // Simulando uma resposta HTTP 404 (Not Found)
+        ResponseEntity<String> responseEntity = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class))).thenReturn(responseEntity);
 
         boolean usuarioEncontrado = projetoService.verificarUsuario(cpf);
 
-        Assertions.assertFalse(usuarioEncontrado);
+        Assertions.assertFalse(usuarioEncontrado, "O usuário não deveria ser encontrado.");
+    }
+
+    @Test
+    void testVerificarUsuario_erroNaRequisicao() {
+        String cpf = "789";
+
+        // Simulando uma exceção na requisição
+        Mockito.when(restTemplate.getForEntity(Mockito.anyString(), Mockito.eq(String.class)))
+                .thenThrow(new RuntimeException("Erro na requisição"));
+
+        boolean usuarioEncontrado = projetoService.verificarUsuario(cpf);
+
+        Assertions.assertFalse(usuarioEncontrado, "Deveria retornar falso em caso de exceção.");
     }
 }
