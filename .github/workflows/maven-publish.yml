@@ -55,6 +55,6 @@ jobs:
           key: ${{ secrets.KEY_TEST }}
           port: 22
           script: |
-            docker stop simulado-ac
-            docker rm --force simulado-ac
+            docker stop pi-ac
+            docker rm --force pi-ac
             docker run -d -p 8080:8080 --network=rede --name pi-ac mmp052/pi-ac:${{ github.sha }}
