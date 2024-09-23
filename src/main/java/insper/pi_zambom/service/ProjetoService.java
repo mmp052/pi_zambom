@@ -3,6 +3,7 @@ package insper.pi_zambom.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -30,6 +31,8 @@ public class ProjetoService {
         projeto.setStatus(projetoDTO.getStatus());
         projeto.setCpfGerente(projetoDTO.getCpfGerente());
 
+        // System.out.println("Cadastrando projeto: " + projeto);
+
         return projetoRepository.save(projeto);
     }
 
@@ -56,11 +59,11 @@ public class ProjetoService {
         return projetoRepository.save(projeto);
     }
 
-    private boolean verificarUsuario(String cpf) {
+    boolean verificarUsuario(String cpf) {
         String url = "http://184.72.80.215:8080/usuario/" + cpf;
         try {
-            restTemplate.getForObject(url, String.class);
-            return true;
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            return response.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
             return false;
         }
